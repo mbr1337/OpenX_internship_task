@@ -1,0 +1,16 @@
+.product-data-table {
+  width: 80%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+.product-data-table th,
+.product-data-table td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  text-align: center;
+}
+
+.product-data-table th {
+  background-color: #f8f8f8;
+}

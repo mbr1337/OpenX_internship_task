@@ -1,45 +1,32 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import '../styles/cartDataStyle.scss';
+import { usersApi, productsApi, cartsApi } from "../api/apiEndpoints";
 
 function CartsData() {
-    const cartsApi = `https://fakestoreapi.com/carts/?startdate=2000-01-01&enddate=2023-04-07`;
-    const productsApi = `https://fakestoreapi.com/products`;
-    const usersApi = `https://fakestoreapi.com/users`;
     const [cartsData, setCartsData] = useState([]);
     const [products, setProducts] = useState([]);
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    const calculateTotalValue = (cart) => {
+        if (!cart || !cart.products) {
+            return 0;
+        }
 
-    // Find the cart with the highest value
-    const cartWithHighestValue = cartsData.reduce((prevCart, currentCart) => {
-        const prevCartTotalValue = prevCart && prevCart.products ? prevCart.products.reduce((prevTotal, product) => {
+        return cart.products.reduce((totalValue, product) => {
             const matchingProduct = products.find((p) => p.id === product.productId);
-            return prevTotal + (matchingProduct ? matchingProduct.price * product.quantity : 0);
-        }, 0) : 0;
-
-        const currentCartTotalValue = currentCart.products.reduce((currentTotal, product) => {
-            const matchingProduct = products.find((p) => p.id === product.productId);
-            return currentTotal + (matchingProduct ? matchingProduct.price * product.quantity : 0);
+            return totalValue + (matchingProduct ? matchingProduct.price * product.quantity : 0);
         }, 0);
+    };
 
+    const cartWithHighestValue = cartsData.reduce((prevCart, currentCart) => {
+        const prevCartTotalValue = prevCart && prevCart.products ? calculateTotalValue(prevCart) : 0;
+        const currentCartTotalValue = calculateTotalValue(currentCart);
         return prevCartTotalValue > currentCartTotalValue ? prevCart : currentCart;
     }, {});
 
-
-    // Determine the value of the cart with the highest value
-    const highestCartValue = cartWithHighestValue.products ? cartWithHighestValue.products.reduce(
-        (totalValue, product) => {
-            const matchingProduct = products.find((p) => p.id === product.productId);
-            if (matchingProduct) {
-                return totalValue + matchingProduct.price * product.quantity;
-            } else {
-                return totalValue;
-            }
-        },
-        0
-    ) : 0;
-
-    // Get the user ID of the cart with the highest value
+    const highestCartValue = calculateTotalValue(cartWithHighestValue);
     const userIdOfHighestCartValue = cartWithHighestValue.userId;
 
     useEffect(() => {
@@ -58,71 +45,74 @@ function CartsData() {
                     (user) => user.id === userIdOfHighestCartValue
                 );
                 setUser(userWithHighestCartValue);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching data:', error);
+                setLoading(false);
             }
         };
-
         fetchData();
-    }, [cartsApi, productsApi, userIdOfHighestCartValue, usersApi]);
-
-
+    }, [userIdOfHighestCartValue]);
 
     return (
         <section id="cartsData">
-            <h2><u>Carts data</u></h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User ID</th>
-                        <th>Date</th>
-                        <th>Product ID</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {cartsData.map(cart => (
-                        <tr key={cart.id}>
-                            <td>{cart.id}</td>
-                            <td>{cart.userId}</td>
-                            <td>{new Date(cart.date).toLocaleDateString()}</td>
-                            <td>
-                                {cart.products.map(product => (
-                                    <div key={product.productId}>
-                                        {product.productId}
-                                    </div>
-                                ))}
-                            </td>
-                            <td>
-                                {cart.products.map(product => (
-                                    <div key={product.productId}>
-                                        {product.quantity}
-                                    </div>
-                                ))}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <div id="customer_cart_with_the_highest_value">
-                <h1>Cart with Highest Value</h1>
-                {user ? (
-                    <div>
-                        <p>Cart ID: {cartWithHighestValue.id}</p>
-                        <p>User ID: {userIdOfHighestCartValue}</p>
-                        <p>User Name: {user.name.firstname} {user.name.lastname}</p>
-                        <p>Value: ${highestCartValue.toFixed(2)}</p>
+            {loading ? (
+                <div>Loading Product data...</div>
+            ) : (
+                <>
+                    <h2><u>Carts data</u></h2>
+                    <table className="cart-data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User ID</th>
+                                <th>Date</th>
+                                <th>Product ID</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {cartsData.map(cart => (
+                                <tr key={cart.id}>
+                                    <td>{cart.id}</td>
+                                    <td>{cart.userId}</td>
+                                    <td>{new Date(cart.date).toLocaleDateString()}</td>
+                                    <td>
+                                        {cart.products.map(product => (
+                                            <div key={product.productId}>
+                                                {product.productId}
+                                            </div>
+                                        ))}
+                                    </td>
+                                    <td>
+                                        {cart.products.map(product => (
+                                            <div key={product.productId}>
+                                                {product.quantity}
+                                            </div>
+                                        ))}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div id="customer_cart_with_the_highest_value">
+                        <h1>Cart with Highest Value</h1>
+                        {user ? (
+                            <div>
+                                <p>Cart ID: <b>{cartWithHighestValue.id}</b></p>
+                                <p>User ID: <b>{userIdOfHighestCartValue}</b></p>
+                                <p>User Name: <b>{user.name.firstname} {user.name.lastname}</b></p>
+                                <p>Value: <b><u>${highestCartValue.toFixed(2)}</u></b></p>
+                            </div>
+                        ) : (
+                            <p>Loading user data...</p>
+                        )}
                     </div>
-                ) : (
-                    <p>Loading user data...</p>
-                )}
-
-            </div>
-
+                </>
+            )}
         </section>
     );
 }
 
 export default CartsData;
+

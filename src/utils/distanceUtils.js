@@ -1,4 +1,4 @@
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
+export const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // Radius of the Earth in km
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -13,12 +13,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return distance;
 };
 
-
-const findFurthestUsers = (usersData) => {
-    let maxDistance = -1;
-    let user1 = null;
-    let user2 = null;
-    let distance = 0; // Initialize distance variable
+export const displayDistances = (usersData) => {
+    const distances = [];
     for (let i = 0; i < usersData.length; i++) {
         for (let j = i + 1; j < usersData.length; j++) {
             const lat1 = parseFloat(usersData[i].address.geolocation.lat);
@@ -26,16 +22,26 @@ const findFurthestUsers = (usersData) => {
             const lat2 = parseFloat(usersData[j].address.geolocation.lat);
             const lon2 = parseFloat(usersData[j].address.geolocation.long);
             const currDistance = calculateDistance(lat1, lon1, lat2, lon2);
-            if (currDistance > maxDistance) {
-                maxDistance = currDistance;
-                user1 = usersData[i];
-                user2 = usersData[j];
-                distance = maxDistance.toFixed(2);
-            }
+            distances.push({
+                user1: usersData[i].name.firstname + " " + usersData[i].name.lastname,
+                user2: usersData[j].name.firstname + " " + usersData[j].name.lastname,
+                distance: currDistance.toFixed(2)
+            });
         }
     }
-    // Return user1, user2, and distance as an object
-    return { user1, user2, distance };
+    return distances;
 };
 
-export { calculateDistance, findFurthestUsers };
+export const getFurthestDistance = (distances) => {
+    let furthestDistance = 0;
+    let furthestUser1 = "";
+    let furthestUser2 = "";
+    for (let i = 0; i < distances.length; i++) {
+        if (parseFloat(distances[i].distance) > furthestDistance) {
+            furthestDistance = parseFloat(distances[i].distance);
+            furthestUser1 = distances[i].user1;
+            furthestUser2 = distances[i].user2;
+        }
+    }
+    return { furthestDistance, furthestUser1, furthestUser2 };
+};
